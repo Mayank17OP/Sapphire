@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Drowsiness Detection System (Multi-Face)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection"></script>
+
+    <style>
+        .video-container { position: relative; width: 100%; height: 0; padding-bottom: 56.25%; background-color: #111827; border-radius: 0.5rem; overflow: hidden; }
+        .video-container video, .video-container canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+        .alert-pulse { animation: pulse 1.5s infinite; }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        .stats-card { transition: all 0.3s ease; }
+        .stats-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1); }
+        .sidebar { scrollbar-width: thin; scrollbar-color: #d1d5db #f3f4f6; }
+        .sidebar::-webkit-scrollbar { width: 6px; }
+        .sidebar::-webkit-scrollbar-track { background: #f3f4f6; }
+        .sidebar::-webkit-scrollbar-thumb { background-color: #d1d5db; border-radius: 6px; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-6">
+        <header class="mb-8">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800 flex items-center">
+                        <i class="fas fa-eye mr-3 text-blue-600"></i>
+                        Drowsiness Detection (Multi-Face)
+                    </h1>
+                    <p class="text-gray-600 mt-1">TF.js Real-time Detection</p>
+                </div>
+                <div class="mt-4 md:mt-0 flex items-center space-x-4">
+                    <div id="modelStatus" class="flex items-center bg-yellow-50 px-3 py-1 rounded-full">
+                        <div id="modelStatusIndicator" class="w-3 h-3 rounded-full bg-yellow-500 mr-2 animate-ping"></div>
+                        <span id="modelStatusText" class="text-sm text-gray-700">Model Loading...</span>
+                    </div>
+                </div>
+            </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div class="lg:col-span-3 space-y-6">
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="p-4">
+                        <div class="video-container">
+                            <video id="videoFeed" autoplay muted playsinline class="w-full h-full"></video>
+                            <canvas id="overlayCanvas" class="absolute top-0 left-0 w-full h-full"></canvas>
+                        </div>
+                        <div class="mt-4 flex flex-wrap justify-center gap-3">
+                            <button id="startBtn" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center" disabled>
+                                <i class="fas fa-play mr-2"></i> Start Detection
+                            </button>
+                            <button id="stopBtn" class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center" disabled>
+                                <i class="fas fa-stop mr-2"></i> Stop
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="alertSection" class="hidden">
+                     <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg flex items-center alert-pulse">
+                        <i class="fas fa-exclamation-triangle text-2xl mr-4"></i>
+                        <div>
+                            <h3 class="font-bold">DROWSINESS DETECTED!</h3>
+                            <p>Alarm triggered. Please stay alert!</p>
+                        </div>
+                        <button id="dismissAlert" class="ml-auto text-red-700 hover:text-red-900"><i class="fas fa-times"></i></button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg">
+                    <div class="p-4 border-b"><h2 class="text-xl font-semibold text-gray-800"><i class="fas fa-clipboard-list mr-2 text-blue-500"></i> Detection Log</h2></div>
+                    <div class="p-4">
+                        <div id="logContainer" class="h-48 overflow-y-auto bg-gray-50 p-3 rounded-lg font-mono text-sm space-y-2 sidebar">
+                            <div class="text-gray-500">System initialized. Waiting for model...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                <div class="bg-white rounded-xl shadow-lg">
+                    <div class="p-4 border-b"><h2 class="text-xl font-semibold text-gray-800"><i class="fas fa-chart-bar mr-2 text-blue-500"></i> Detection Summary</h2></div>
+                    <div class="p-4 space-y-4">
+                        <div class="stats-card bg-purple-50 p-4 rounded-lg">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-purple-100 text-purple-600 mr-4"><i class="fas fa-users text-xl"></i></div>
+                                <div>
+                                    <p class="text-sm text-gray-500">Faces Detected</p>
+                                    <h3 id="faceCount" class="text-2xl font-bold">0</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stats-card bg-blue-50 p-4 rounded-lg">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-blue-100 text-blue-600 mr-4"><i class="fas fa-eye text-xl"></i></div>
+                                <div>
+                                    <p class="text-sm text-gray-500">Lowest Eye Aspect Ratio</p>
+                                    <h3 id="earValue" class="text-2xl font-bold">0.00</h3>
+                                    <div class="text-xs text-gray-500 mt-1"><span id="earStatus" class="font-medium">-</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stats-card bg-yellow-50 p-4 rounded-lg">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-yellow-100 text-yellow-600 mr-4"><i class="fas fa-exclamation-triangle text-xl"></i></div>
+                                <div>
+                                    <p class="text-sm text-gray-500">Alarms Triggered</p>
+                                    <h3 id="alarmCount" class="text-2xl font-bold">0</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg">
+                    <div class="p-4 border-b"><h2 class="text-xl font-semibold text-gray-800"><i class="fas fa-cog mr-2 text-blue-500"></i> Detection Settings</h2></div>
+                    <div class="p-4 space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">EAR Threshold</label>
+                            <div class="flex items-center">
+                                <input type="range" id="earThreshold" min="0.1" max="0.4" step="0.01" value="0.25" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                                <span id="earThresholdValue" class="ml-4 text-gray-700 font-medium">0.25</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Consecutive Frames</label>
+                            <div class="flex items-center">
+                                <input type="range" id="consecutiveFrames" min="5" max="50" step="1" value="20" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                                <span id="consecutiveFramesValue" class="ml-4 text-gray-700 font-medium">20</span>
+                            </div>
+                        </div>
+                         <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Alarm Volume</label>
+                            <div class="flex items-center">
+                                <input type="range" id="alarmVolume" min="0" max="1" step="0.1" value="0.7" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                                <span id="alarmVolumeValue" class="ml-4 text-gray-700 font-medium">70%</span>
+                            </div>
+                        </div>
+                         <div class="flex items-center justify-between pt-2">
+                             <label for="debugMode" class="text-sm font-medium text-gray-700 cursor-pointer">Debug Mode</label>
+                             <div class="relative inline-block w-10 mr-2 align-middle select-none">
+                                 <input type="checkbox" name="debugMode" id="debugMode" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer transition-transform duration-200 ease-in-out"/>
+                                 <label for="debugMode" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                             </div>
+                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <audio id="alarmSound" src="audio.mp3" preload="auto"></audio>
+
+    <script>
+        // DOM Elements
+        const videoFeed = document.getElementById('videoFeed');
+        const overlayCanvas = document.getElementById('overlayCanvas');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const dismissAlert = document.getElementById('dismissAlert');
+        const faceCount = document.getElementById('faceCount');
+        const earValue = document.getElementById('earValue');
+        const earStatus = document.getElementById('earStatus');
+        const alarmCount = document.getElementById('alarmCount');
+        const earThreshold = document.getElementById('earThreshold');
+        const earThresholdValue = document.getElementById('earThresholdValue');
+        const consecutiveFrames = document.getElementById('consecutiveFrames');
+        const consecutiveFramesValue = document.getElementById('consecutiveFramesValue');
+        const alarmVolume = document.getElementById('alarmVolume');
+        const alarmVolumeValue = document.getElementById('alarmVolumeValue');
+        const logContainer = document.getElementById('logContainer');
+        const alarmSound = document.getElementById('alarmSound');
+        const debugMode = document.getElementById('debugMode');
+        const modelStatusIndicator = document.getElementById('modelStatusIndicator');
+        const modelStatusText = document.getElementById('modelStatusText');
+        const alertSection = document.getElementById('alertSection');
+
+        // State variables
+        let model = null;
+        let isDetecting = false;
+        let lowEARFrames = 0;
+        let animationFrameId = null;
+        let earThresholdSetting = parseFloat(earThreshold.value);
+        let consecutiveFramesSetting = parseInt(consecutiveFrames.value);
+        let alarmVolumeSetting = parseFloat(alarmVolume.value);
+        let currentStream = null;
+
+        // Eye landmark indices from MediaPipe Facemesh
+        const R_EYE_INDICES = [33, 160, 158, 133, 153, 144];
+        const L_EYE_INDICES = [362, 385, 387, 263, 373, 380];
+        
+        // PENTING: Cara baru untuk memuat model (memperbaiki error)
+        async function main() {
+            addLog("Loading Face Landmark Detection model...");
+            try {
+                const detectorConfig = {
+                    runtime: 'mediapipe', 
+                    // Pastikan path ini benar, ini penting untuk memuat komponen
+                    solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh', 
+                    maxFaces: 5, // Diubah untuk mendeteksi lebih dari satu wajah
+                };
+                model = await faceLandmarksDetection.createDetector(faceLandmarksDetection.SupportedModels.MediaPipeFaceMesh, detectorConfig);
+                
+                startBtn.disabled = false;
+                modelStatusIndicator.classList.remove('bg-yellow-500', 'animate-ping');
+                modelStatusIndicator.classList.add('bg-green-500');
+                modelStatusText.textContent = "Model Ready";
+                addLog("Model loaded successfully.");
+            } catch (error) {
+                 modelStatusIndicator.classList.remove('bg-yellow-500', 'animate-ping');
+                 modelStatusIndicator.classList.add('bg-red-500');
+                 modelStatusText.textContent = "Model Failed";
+                 addLog(`Error loading model: ${error.message}`, true);
+                 console.error(error);
+            }
+        }
+        main();
+
+        // --- Event Listeners ---
+        startBtn.addEventListener('click', startDetection);
+        stopBtn.addEventListener('click', stopDetection);
+        dismissAlert.addEventListener('click', () => alertSection.classList.add('hidden'));
+        earThreshold.addEventListener('input', () => {
+            earThresholdSetting = parseFloat(earThreshold.value);
+            earThresholdValue.textContent = earThresholdSetting.toFixed(2);
+        });
+        consecutiveFrames.addEventListener('input', () => {
+            consecutiveFramesSetting = parseInt(consecutiveFrames.value);
+            consecutiveFramesValue.textContent = consecutiveFramesSetting;
+        });
+        alarmVolume.addEventListener('input', () => {
+            alarmVolumeSetting = parseFloat(alarmVolume.value);
+            alarmVolumeValue.textContent = `${Math.round(alarmVolumeSetting * 100)}%`;
+        });
+        
+        // --- Helper Functions ---
+        function euclideanDist(p1, p2) {
+            return Math.sqrt((p1.x - p2.x)**2 + (p1.y - p2.y)**2);
+        }
+
+        function calculateEAR(eyeLandmarks) {
+            const p1 = eyeLandmarks[0];
+            const p2 = eyeLandmarks[1];
+            const p3 = eyeLandmarks[2];
+            const p4 = eyeLandmarks[3];
+            const p5 = eyeLandmarks[4];
+            const p6 = eyeLandmarks[5];
+            const verticalDist = euclideanDist(p2, p6) + euclideanDist(p3, p5);
+            const horizontalDist = euclideanDist(p1, p4);
+            return verticalDist / (2 * horizontalDist);
+        }
+
+        function addLog(message, isError = false) {
+            const timeString = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `p-1 rounded ${isError ? 'text-red-600' : 'text-gray-800'}`;
+            logEntry.innerHTML = `<span class="text-gray-500">[${timeString}]</span> ${message}`;
+            logContainer.prepend(logEntry);
+        }
+
+        // --- Core Detection Logic ---
+        async function startDetection() {
+            try {
+                currentStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+                videoFeed.srcObject = currentStream;
+
+                videoFeed.onloadedmetadata = () => {
+                    isDetecting = true;
+                    startBtn.disabled = true;
+                    stopBtn.disabled = false;
+                    overlayCanvas.width = videoFeed.clientWidth;
+                    overlayCanvas.height = videoFeed.clientHeight;
+                    detectionLoop();
+                    addLog("Detection started.");
+                };
+            } catch (err) {
+                addLog(`Camera Error: ${err.message}`, true);
+                console.error(err);
+            }
+        }
+
+        function stopDetection() {
+            if (!isDetecting) return;
+            isDetecting = false;
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+            }
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            const ctx = overlayCanvas.getContext('2d');
+            ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+            faceCount.textContent = "0";
+            earValue.textContent = "0.00";
+            earStatus.textContent = "-";
+            addLog("Detection stopped.");
+        }
+
+        async function detectionLoop() {
+            if (!isDetecting || !model) return;
+
+            const predictions = await model.estimateFaces(videoFeed);
+            const ctx = overlayCanvas.getContext('2d');
+            ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+            
+            faceCount.textContent = predictions.length;
+
+            if (predictions.length > 0) {
+                let lowestEAR = 1.0; // Mulai dengan nilai EAR yang tinggi
+                let isAnyoneDrowsy = false;
+
+                // --- LOGIKA MULTI-WAJAH DIMULAI DI SINI ---
+                for (const prediction of predictions) {
+                    const keypoints = prediction.keypoints;
+                    
+                    const leftEyeLandmarks = L_EYE_INDICES.map(i => keypoints[i]);
+                    const rightEyeLandmarks = R_EYE_INDICES.map(i => keypoints[i]);
+
+                    const leftEAR = calculateEAR(leftEyeLandmarks);
+                    const rightEAR = calculateEAR(rightEyeLandmarks);
+                    const avgEAR = (leftEAR + rightEAR) / 2.0;
+
+                    lowestEAR = Math.min(lowestEAR, avgEAR); // Simpan EAR terendah
+
+                    if (avgEAR < earThresholdSetting) {
+                        isAnyoneDrowsy = true;
+                    }
+
+                    if (debugMode.checked) {
+                        ctx.fillStyle = 'rgba(0, 255, 0, 0.7)';
+                        for (const point of keypoints) {
+                           ctx.beginPath();
+                           ctx.arc(point.x * (overlayCanvas.width / videoFeed.videoWidth), point.y * (overlayCanvas.height / videoFeed.videoHeight), 1.5, 0, 2 * Math.PI);
+                           ctx.fill();
+                        }
+                    }
+                }
+                // --- LOGIKA MULTI-WAJAH SELESAI ---
+
+                earValue.textContent = lowestEAR.toFixed(3);
+                
+                if (isAnyoneDrowsy) {
+                    lowEARFrames++;
+                    earStatus.textContent = "Low";
+                    earStatus.className = "font-medium text-red-500";
+                    if (lowEARFrames >= consecutiveFramesSetting) {
+                        triggerAlarm();
+                        lowEARFrames = 0; // Reset setelah alarm agar tidak berbunyi terus-menerus
+                    }
+                } else {
+                    lowEARFrames = 0; // Reset jika semua orang tidak mengantuk
+                    earStatus.textContent = "Normal";
+                    earStatus.className = "font-medium text-green-500";
+                    alertSection.classList.add('hidden');
+                }
+                
+            } else {
+                lowEARFrames = 0;
+                earStatus.textContent = "No Face";
+                earStatus.className = "font-medium text-gray-500";
+            }
+
+            animationFrameId = requestAnimationFrame(detectionLoop);
+        }
+
+        function triggerAlarm() {
+            alertSection.classList.remove('hidden');
+            alarmSound.volume = alarmVolumeSetting;
+            alarmSound.play().catch(e => addLog("Playback Error: " + e.message, true));
+            const currentAlarms = parseInt(alarmCount.textContent) + 1;
+            alarmCount.textContent = currentAlarms;
+            addLog(`ALERT: Drowsiness detected!`, true);
+        }
+
+        window.addEventListener('resize', () => {
+            if (isDetecting) {
+                overlayCanvas.width = videoFeed.clientWidth;
+                overlayCanvas.height = videoFeed.clientHeight;
+            }
+        });
+
+        window.addEventListener('beforeunload', () => {
+            if (isDetecting) stopDetection();
+        });
+    </script>
+</body>
+</html>

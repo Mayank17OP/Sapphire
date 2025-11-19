@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Camera, Eye, AlertCircle, CheckCircle2, Zap } from 'lucide-react';
+import { Camera, Eye, AlertCircle, Zap } from 'lucide-react';
 import { useStore } from '@/lib/store';
 
 export const WebcamDemo = () => {
@@ -31,21 +31,9 @@ export const WebcamDemo = () => {
     return () => clearInterval(interval);
   }, [isDetectionRunning, updateFatigueMetrics]);
 
-  const startCamera = async () => {
-    try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
-      setStream(mediaStream);
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-      }
-      setDetectionRunning(true);
-      setPermissionDenied(false);
-    } catch (err) {
-      console.error("Camera access denied or error:", err);
-      setPermissionDenied(true);
-      // Fallback to mock mode without camera
-      setDetectionRunning(true); 
-    }
+  const handleStartDetection = () => {
+    // Redirect to the standalone detection page
+    window.location.href = '/detection.html';
   };
 
   const stopCamera = () => {
@@ -150,7 +138,7 @@ export const WebcamDemo = () => {
       <div className="flex gap-3">
         {!isDetectionRunning ? (
           <button 
-            onClick={startCamera}
+            onClick={handleStartDetection}
             className="flex-1 py-3 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-black font-bold flex items-center justify-center gap-2 transition-all clickable"
           >
             <Zap className="w-4 h-4" /> Start Detection
