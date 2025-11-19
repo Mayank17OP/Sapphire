@@ -32,13 +32,18 @@
 <body class="bg-gray-50 min-h-screen">
     <div class="container mx-auto px-4 py-6">
         <header class="mb-8">
-            <div class="flex flex-col md:flex-row justify-between items-center">
-                <div>
-                    <h1 class="text-3xl font-bold text-gray-800 flex items-center">
-                        <i class="fas fa-eye mr-3 text-blue-600"></i>
-                        Drowsiness Detection (Multi-Face)
-                    </h1>
-                    <p class="text-gray-600 mt-1">TF.js Real-time Detection</p>
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-4">
+                    <a href="/dashboard" class="w-10 h-10 flex items-center justify-center rounded-full bg-white shadow-md hover:bg-gray-50 text-gray-700 transition-all" title="Back to Dashboard">
+                        <i class="fas fa-arrow-left"></i>
+                    </a>
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-800 flex items-center">
+                            <i class="fas fa-eye mr-3 text-blue-600"></i>
+                            Drowsiness Detection
+                        </h1>
+                        <p class="text-gray-600 mt-1">TF.js Real-time Detection</p>
+                    </div>
                 </div>
                 <div class="mt-4 md:mt-0 flex items-center space-x-4">
                     <div id="modelStatus" class="flex items-center bg-yellow-50 px-3 py-1 rounded-full">
@@ -46,7 +51,8 @@
                         <span id="modelStatusText" class="text-sm text-gray-700">Model Loading...</span>
                     </div>
                 </div>
-            </header>
+            </div>
+        </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
             <div class="lg:col-span-3 space-y-6">
