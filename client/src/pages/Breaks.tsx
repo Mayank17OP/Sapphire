@@ -107,6 +107,139 @@ const PomodoroTimer = () => {
   );
 };
 
+const Timer202020 = () => {
+  const [phase, setPhase] = useState<'work' | 'rest'>('work');
+  const [time, setTime] = useState(20 * 60); // Start with 20 minutes work
+  const [isActive, setIsActive] = useState(false);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isActive && time > 0) {
+      interval = setInterval(() => {
+        setTime(prev => prev - 1);
+      }, 1000);
+    } else if (time === 0) {
+      // Switch phases
+      if (phase === 'work') {
+        setPhase('rest');
+        setTime(20); // 20 seconds rest
+        // Play sound or notification here if needed
+      } else {
+        setPhase('work');
+        setTime(20 * 60); // Back to 20 mins work
+        setIsActive(false); // Auto-pause after cycle completes? Or continue? Let's auto-pause.
+      }
+    }
+    return () => clearInterval(interval);
+  }, [isActive, time, phase]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center h-64">
+      <div className="flex flex-col items-center mb-8">
+         <span className={cn(
+           "text-lg font-bold mb-2 uppercase tracking-widest",
+           phase === 'work' ? "text-cyan-400" : "text-green-400"
+         )}>
+           {phase === 'work' ? "Focus Time" : "Look Away (20ft)"}
+         </span>
+         <div className="text-6xl font-mono font-bold text-white tracking-wider tabular-nums">
+           {formatTime(time)}
+         </div>
+      </div>
+
+      <div className="flex gap-4">
+        <button
+          onClick={() => setIsActive(!isActive)}
+          className="p-4 rounded-full bg-white/10 hover:bg-white/20 transition-all clickable"
+        >
+          {isActive ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
+        </button>
+        <button
+          onClick={() => { setIsActive(false); setPhase('work'); setTime(20 * 60); }}
+          className="p-4 rounded-full bg-white/10 hover:bg-white/20 transition-all clickable"
+        >
+          <RotateCcw className="w-6 h-6" />
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const StretchTimer = () => {
+  const [activeStretch, setActiveStretch] = useState<number | null>(null);
+  const [time, setTime] = useState(0);
+  const [isActive, setIsActive] = useState(false);
+
+  const stretches = [
+    { title: "Neck Roll", duration: 30 },
+    { title: "Shoulder Shrug", duration: 30 },
+    { title: "Wrist Flex", duration: 45 }
+  ];
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isActive && time > 0) {
+      interval = setInterval(() => {
+        setTime(prev => prev - 1);
+      }, 1000);
+    } else if (time === 0 && isActive) {
+      setIsActive(false);
+      setActiveStretch(null);
+    }
+    return () => clearInterval(interval);
+  }, [isActive, time]);
+
+  const startStretch = (index: number) => {
+    setActiveStretch(index);
+    setTime(stretches[index].duration);
+    setIsActive(true);
+  };
+
+  return (
+     <div className="text-center h-full flex flex-col justify-center items-center">
+        <h2 className="text-2xl font-bold mb-8">Quick Relief Stretches</h2>
+        
+        {activeStretch !== null ? (
+           <div className="mb-8 flex flex-col items-center animate-in fade-in zoom-in duration-300">
+              <div className="w-20 h-20 rounded-full bg-cyan-500/20 flex items-center justify-center mb-4">
+                 <Timer className="w-10 h-10 text-cyan-400 animate-pulse" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">{stretches[activeStretch].title}</h3>
+              <div className="text-4xl font-mono font-bold text-cyan-400 mb-4">{time}s</div>
+              <button 
+                 onClick={() => { setIsActive(false); setActiveStretch(null); }}
+                 className="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-sm"
+              >
+                 Cancel
+              </button>
+           </div>
+        ) : (
+          <div className="grid md:grid-cols-3 gap-6 w-full">
+             {stretches.map((stretch, i) => (
+               <div 
+                 key={i} 
+                 onClick={() => startStretch(i)}
+                 className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 cursor-pointer transition-all group"
+               >
+                 <div className="w-12 h-12 rounded-full bg-slate-700 mx-auto mb-4 flex items-center justify-center group-hover:bg-cyan-500/20 group-hover:text-cyan-400 transition-colors">
+                   <Play className="w-5 h-5 ml-1" />
+                 </div>
+                 <h3 className="font-bold text-white">{stretch.title}</h3>
+                 <span className="text-xs text-slate-400">{stretch.duration}s Timer</span>
+               </div>
+             ))}
+          </div>
+        )}
+     </div>
+  );
+}
+
 export const Breaks = () => {
   const [activeTab, setActiveTab] = useState<'breathing' | '202020' | 'stretch' | 'focus'>('breathing');
 
@@ -176,41 +309,19 @@ export const Breaks = () => {
               )}
 
               {activeTab === '202020' && (
-                <div className="text-center h-full flex flex-col justify-center items-center space-y-8">
-                  <div className="p-6 rounded-full bg-purple-500/20 text-purple-400 mb-4">
-                    <Eye className="w-12 h-12" />
-                  </div>
+                <div className="text-center h-full flex flex-col justify-between">
                   <div>
                     <h2 className="text-2xl font-bold mb-4">The 20-20-20 Rule</h2>
                     <p className="text-slate-300 max-w-md mx-auto leading-relaxed">
                       Every <span className="text-cyan-400 font-bold">20 minutes</span>, look at something <span className="text-cyan-400 font-bold">20 feet away</span> for at least <span className="text-cyan-400 font-bold">20 seconds</span>.
                     </p>
                   </div>
-                  <button className="px-8 py-3 rounded-lg bg-purple-600 text-white font-bold hover:bg-purple-500 transition-all clickable">
-                    Start 20min Timer
-                  </button>
+                  <Timer202020 />
                 </div>
               )}
               
               {activeTab === 'stretch' && (
-                <div className="text-center h-full flex flex-col justify-center items-center">
-                  <h2 className="text-2xl font-bold mb-8">Quick Relief Stretches</h2>
-                  <div className="grid md:grid-cols-3 gap-6 w-full">
-                     {[
-                       { title: "Neck Roll", time: "30s" },
-                       { title: "Shoulder Shrug", time: "30s" },
-                       { title: "Wrist Flex", time: "45s" }
-                     ].map((stretch, i) => (
-                       <div key={i} className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 cursor-pointer transition-all group">
-                         <div className="w-12 h-12 rounded-full bg-slate-700 mx-auto mb-4 flex items-center justify-center group-hover:bg-cyan-500/20 group-hover:text-cyan-400 transition-colors">
-                           <Dumbbell className="w-6 h-6" />
-                         </div>
-                         <h3 className="font-bold text-white">{stretch.title}</h3>
-                         <span className="text-xs text-slate-400">{stretch.time}</span>
-                       </div>
-                     ))}
-                  </div>
-                </div>
+                <StretchTimer />
               )}
             </motion.div>
           </AnimatePresence>
