@@ -1,0 +1,162 @@
+# Replit AI / Developer Prompt — Build **Sapphire — BurnoutGuard**
+
+Use this prompt to instruct Replit (or any AI/code assistant on Replit) to generate a **complete, multi-page React web app** that matches the product brief below.
+
+> **Important**: This prompt requests a unique design language (no Builder.io defaults), Cyberpunk-meets-wellness aesthetic, glassmorphism, particle animations, and mock webcam fatigue-detection features. The delivered project should be runnable on Replit with `npm install` and `npm run dev` and must include all pages and functionality described.
+
+---
+
+## Project metadata / constraints (include these in generated project)
+
+* **Project name:** `sapphire-burnoutguard`
+* **Tech stack:** React (Vite), Tailwind CSS (for utility), Framer Motion, tsParticles (or particles.js equivalent), Recharts (for graphs), Zustand or Context for app state, react-router-dom for routing. Use modern JS (ESM). Use only open-source libraries.
+* **Language:** JavaScript (TypeScript optional but not required). Keep defaults JS unless asked.
+* **Design tokens (must use exactly):**
+
+  * Primary Colors: `#0F1A30` (Deep sapphire blue), `#00F5FF` (Electric cyan), `#B19FFF` (Soft lavender)
+  * Secondary Colors: `#1A1A1A` (Dark charcoal), `#F0F4FF` (Ice white)
+  * Typography: Modern geometric sans-serif (use Montserrat or Poppins from Google Fonts). Subtle glows on headers.
+  * Style: Cyberpunk-meets-wellness with glass-morphism (backdrop blur), soft glows, neon accents, subtle particle background in hero.
+* **Accessibility:** Keyboard-focus states, aria labels for interactive items, readable color contrast for important text.
+
+---
+
+## Pages & Routes (all links must work)
+
+* `/` — Landing page (Hero + demo + CTA)
+* `/dashboard` — Dashboard page (live graph, webcam feed placeholder, fatigue metrics, break suggestion cards)
+* `/chat` — Chat page (Sapphire AI avatar chat UI, real-time typing simulation, mood tracker)
+* `/breaks` — Interventions page (breathing exercise, 20-20-20 timer, stretch animations, Pomodoro-style Focus session)
+* `/settings` — Settings page (privacy, notifications, sensitivity sliders, account management)
+
+All navigation must be implemented with `react-router-dom` `<Link>` or `<NavLink>` and should include smooth transitions (use Framer Motion page transition).
+
+---
+
+## Feature & Component Requirements (must implement)
+
+### Visual & UI components
+
+* **Unique design language** across app — do NOT copy Builder.io themes; build custom CSS/Tailwind tokens.
+* **Glass-morphism cards** using `backdrop-filter: blur(...)` with soft borders and inner glow.
+* **Subtle particle background** on hero sections using `tsparticles` or `particles.js` (configurable intensity).
+* **Custom cursor effects**: a subtle ring that follows pointer; clickable elements show a pulse.
+* **Animated "fatigue level" indicator**: circular or bar meter that changes color from cyan -> lavender -> deep red based on level. It must animate smoothly.
+* **Subtle particle and micro-interaction animations** (hover, focus) with Framer Motion.
+
+### Landing Page (`/`)
+
+* **Hero** with animated "Focus Energy" visualization — can be an animated SVG canvas or small interactive component that pulses with mock data.
+* **Webcam demo** showing real-time fatigue detection: if webcam access allowed, show `getUserMedia` feed in a rounded glass card and run a mock detection algorithm (blink/eye closure counter simulated, not full ML): e.g., use average brightness + timed blink simulation to produce values. If webcam denied, show fallback demo video or animated placeholder.
+* Prominent value proposition: **"Stop burnout before it starts"** with download CTA (download button triggers a modal that explains desktop app availability and simulates a file download link).
+
+### Dashboard (`/dashboard`)
+
+* **Live "Focus Energy" graph**: use Recharts and feed **mock** data that updates every second (use `setInterval` to push new points and keep a sliding window). Include play/pause controls.
+* **Webcam feed placeholder** with `Start/Stop detection` buttons and visual indicator of detection state.
+* **Fatigue metrics panel**: show metrics such as `Eye Closure (avg)`, `Yawning Count`, `Posture Alert`, `Focus Score`. Values should update (mock) and be highlighted when thresholds are crossed.
+* **Break suggestion cards** that appear as chips/cards when thresholds are hit; clicking a suggestion opens the Interventions page anchored to the recommended exercise.
+
+### Chat (`/chat`)
+
+* **Chat UI** with an animated Sapphire AI avatar (SVG + subtle glow), messages area, input area, and pre-set conversation starters.
+* Implement **real-time typing simulation** for bot responses: animate a typing indicator for 500–1500ms before rendering full message; also support streaming-like reveal (character-by-character) for realism.
+* **Mood tracking**: emoji selector (range from 😃 to 😔) that stores selection in `localStorage` and updates a small mood history.
+
+### Interventions (`/breaks`)
+
+* **Interactive breathing exercise**: animated box-breathing component (4-4-4-4 or 4-4-4) with circle/box that expands/contracts and textual cues.
+* **20-20-20 rule timer**: when started, counts down a 20-minute work timer (or allow toggling between a short demo 20s for quick testing) then triggers a 20-second countdown for looking at distant object; show progress and a big dismiss button.
+* **Quick stretch animations**: small Lottie-like animations or CSS animated SVGs with play/pause controls.
+* **Focus Session timer**: Pomodoro (25/5 preset) with start/pause/reset. When session completes, show a completion modal with the option to log mood or take a break.
+
+### Settings (`/settings`)
+
+* **Privacy controls** with webcam permission toggle (this only toggles whether the app will attempt getUserMedia; obviously explain in UI that the webcam feed never leaves the browser).
+* **Notification preferences** (desktop notifications mock; show permission request flow if allowed by browser; fallback to toast messages).
+* **Sensitivity sliders** for fatigue detection thresholds (eye closure sensitivity, yawn detection sensitivity). Sliders must persist to `localStorage`.
+* **Account management** area (mock form to update name/email) — forms are submittable and show loading states, and persist to `localStorage`.
+
+### Other Technical Requirements
+
+* Use `localStorage` to persist at least: theme preference (light/dark), fatigue sensitivity settings, mood history, and notification preference.
+* All interactive elements must have hover/focus states, and show a loading state for async actions (simulate 700–1200ms delays).
+* Mobile responsive layout with breakpoints; primary UX optimized for desktop.
+* Provide keyboard-accessible controls and ARIA attributes for major components.
+* Provide inline comments in code for complex parts and a README with instructions to run locally on Replit.
+
+---
+
+## Project Deliverables (what to generate in Replit)
+
+1. A runnable project with `package.json` and `scripts`:
+
+   * `dev` -> start Vite dev server
+   * `build` -> build
+   * `preview` -> preview build
+2. All `src/` files for a full React app, including `main.jsx`, `App.jsx`, pages, components, `styles.css` (or Tailwind config), and an `assets/` folder.
+3. A `README.md` with overview, run instructions, and notes on mocked webcam detection limitations.
+4. Small seed/mock dataset used for graphs and demos.
+5. A `public/manifest.json` + basic PWA hints for the "desktop app" download CTA (optional but recommended).
+
+---
+
+## Implementation Guidance (explicit suggestions for the generator)
+
+* Use **Vite + React** starter template. Use Tailwind with `postcss` for quickly composing the glass effect tokens. Add a tiny custom CSS file for glow and cursor effects.
+* For mock webcam fatigue detection, **DO NOT** attempt to ship a real ML model. Instead implement a deterministic simulated detector that:
+
+  * Monitors blink rate by counting quick changes in brightness on the webcam feed (approximation) OR uses a simulated algorithm that increases fatigue over time when user hasn't taken breaks.
+  * Exposes a `startDetection()` / `stopDetection()` API that updates app state with `eyeClosure`, `yawns`, `posture` flags.
+* Use `tsparticles` for hero particles and small parallax effect.
+* Use `Recharts` for the Focus Energy chart and animate updates smoothly.
+* Use `Framer Motion` for page transitions, card hover lifts, and small micro-interactions.
+* Keep the code modular: components like `FatigueMeter`, `WebcamDemo`, `FocusChart`, `BreathingGuide`, `ChatBot`, `PomodoroTimer`, `SettingsPanel`.
+
+---
+
+## Quality & Polish
+
+* Every route should include a header with the product logo (use a simple SVG wordmark made with the deep sapphire plus cyan glow) and a compact nav. Include a footer with links to Support, Privacy, and Terms.
+* Buttons and inputs should have tactile hover/focus states and the custom cursor ring effect.
+* Animations should be subtle and not cause motion-sickness; include `prefers-reduced-motion` CSS respect.
+* Provide mocked analytics console (dev-only) that logs detection events to the console in a readable format.
+
+---
+
+## Files / Example Short Snippets to Seed (optional to include in generated repo)
+
+* `index.html` — standard Vite template.
+* `src/main.jsx` — React entry with Router and Framer Motion AnimatePresence for transitions.
+* `src/App.jsx` — Shell + Nav + Routes.
+* `src/pages/Landing.jsx`, `Dashboard.jsx`, `Chat.jsx`, `Breaks.jsx`, `Settings.jsx`.
+* `src/components/FatigueMeter.jsx` — animated circular meter.
+* `src/utils/webcamMock.js` — mock detection logic using `getUserMedia` when available else fallback to simulated values.
+* `README.md` — explains how the demo uses mocked detection and how to test features without real webcam.
+
+---
+
+## Final acceptance criteria (what I will check on Replit)
+
+1. The app runs on Replit with `npm install` and `npm run dev`.
+2. The navigation works and all pages are reachable.
+3. The hero shows particle background and an animated Focus Energy component.
+4. Webcam demo runs (or shows placeholder) and `Start/Stop detection` toggles mock detection and updates metrics.
+5. Focus graph updates with mock data.
+6. Break suggestions pop when thresholds hit; clicking navigates to `/breaks`.
+7. Chat simulates typing and stores mood in `localStorage`.
+8. Interventions page includes breathing, 20-20-20 timer (demo mode available), stretches, and Pomodoro.
+9. Settings persist preferences to `localStorage` and show loading states.
+10. All interactive elements have hover/focus, custom cursor, and page transitions.
+
+---
+
+### Delivery format for Replit AI / coder
+
+Please generate the full repository with source files and a working `README.md`. If you cannot implement a feature (for example, real ML), clearly mark it as **mocked** in the README and ensure UX still showcases the feature.
+
+---
+
+If you want, append a short `test checklist` in `README.md` for QA steps (login not required).
+
+Good luck — build a sleek, premium mental-health tech experience with personality and care.
