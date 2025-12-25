@@ -12,7 +12,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 function App() {
   return (
     <TooltipProvider>
-       {/* Layout includes the Navbar and global styles */}
       <Layout>
         <Routes>
           <Route path="/" element={<Landing />} />
@@ -20,6 +19,7 @@ function App() {
           <Route path="/chat" element={<Chat />} />
           <Route path="/breaks" element={<Breaks />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/index.html" element={<Landing />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Layout>
