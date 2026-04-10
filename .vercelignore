@@ -1,0 +1,17 @@
+# Exclude Replit-specific files
+.replit
+.local
+
+# Exclude raw assets (not needed after build)
+attached_assets
+
+# Exclude server source (it's served via api/ folder as a serverless function)
+# The api/ folder is what Vercel uses for the backend
+server/vite.ts
+
+# Exclude migration files (run separately)
+migrations
+
+# Exclude test/dev artifacts
+*.tar.gz
+.DS_Store
