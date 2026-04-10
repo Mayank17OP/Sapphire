@@ -1,0 +1,15 @@
+[1G[0K⠙[1G[0K
+> rest-express@1.0.0 dev:client
+> vite dev --port 5000
+
+[1G[0K⠙[1G[0K
+
+
+
+[1;1H[0J
+  [32m[1mVITE[22m v7.1.12[39m  [2mready in [0m[1m2346[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5000[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://172.31.69.34:[1m5000[22m/[39m
+[2m[32m  ➜[39m[22m[2m  press [22m[1mh + enter[22m[2m to show help[22m
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
