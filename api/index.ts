@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { IncomingMessage, ServerResponse } from "http";
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "../server/routes";
 
@@ -61,11 +61,11 @@ const initPromise = registerRoutes(app).then(() => {
   isInitialized = true;
 });
 
-// Vercel serverless handler
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+// Vercel serverless handler – accepts standard Node IncomingMessage/ServerResponse
+export default async function handler(req: IncomingMessage, res: ServerResponse) {
   if (!isInitialized) {
     await initPromise;
   }
-  // @ts-ignore – VercelRequest/Response are compatible with IncomingMessage/ServerResponse
+  // @ts-ignore – Express app is compatible with IncomingMessage/ServerResponse
   app(req, res);
 }
